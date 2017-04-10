@@ -1,0 +1,33 @@
+{
+	"name": "sample-topo.json",
+	"attrs": {},
+	"resources": 
+	[
+		{
+			"alias": "server",
+			"resource": 
+			{
+				"operands": [{"attribute": "typecategory","value": "Server"}]
+			},
+
+			"resources": 
+			[
+				{
+					"alias": "linux",
+					"resource": 
+					{
+						"operands": 
+						[
+							{
+								"attribute": "os",
+								"value": "window",
+								"operator": "contains"
+							}
+						],
+						"type": "not"
+					}
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,51 @@
+ <dependency>
+	  <groupId>org.springframework.boot</groupId>
+	  <artifactId>spring-boot-starter-jdbc</artifactId>
+  	</dependency>
+    
+      <dependency>
+	  <groupId>com.oracle</groupId>
+	  <artifactId>ojdbc6</artifactId>
+	  <version>11.2.0.4.0</version>
+	</dependency>
+  
+  
+  <build>
+    <plugins>
+    	<plugin>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-maven-plugin</artifactId>
+    		<configuration>
+                <fork>true</fork>
+            </configuration>
+    		<executions>
+    			<execution>
+    				<goals>
+    					<goal>repackage</goal>
+    				</goals>
+    			</execution>
+    		</executions>
+    	</plugin>
+    </plugins>
+  </build>
+  
+  
+  
+   <!--mybatis-->
+	<dependency>
+	    <groupId>org.mybatis.spring.boot</groupId>
+	    <artifactId>mybatis-spring-boot-starter</artifactId>
+	    <version>1.1.1</version>
+	</dependency>
+	<!--mapper-->
+	<dependency>
+	    <groupId>tk.mybatis</groupId>
+	    <artifactId>mapper-spring-boot-starter</artifactId>
+	    <version>1.1.0</version>
+	</dependency>
+	<!--pagehelper-->
+	<dependency>
+	    <groupId>com.github.pagehelper</groupId>
+	    <artifactId>pagehelper-spring-boot-starter</artifactId>
+	    <version>1.1.0</version>
+	</dependency>

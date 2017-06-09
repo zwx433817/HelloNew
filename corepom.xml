@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.huawei</groupId>
+    <artifactId>cida3</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <artifactId>cida3-core</artifactId>
+  <name>cida3-core</name>
+  <url>http://maven.apache.org</url>
+  <properties>
+  	<mybatis.version>3.3.1</mybatis.version>
+    <mybatis.spring.version>1.2.4</mybatis.spring.version>
+    <mapper.version>3.3.6</mapper.version>
+    <pagehelper.version>4.1.1</pagehelper.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <dependencies>
+  
+  	<dependency>
+      <groupId>com.huawei</groupId>
+      <artifactId>cida3-common</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.huawei</groupId>
+      <artifactId>cida3-model</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+  	
+  	<dependency>
+	  <groupId>org.apache.httpcomponents</groupId>
+	  <artifactId>httpclient</artifactId>
+	  <version>4.5.2</version>
+	</dependency>
+	<dependency>
+	  <groupId>org.apache.httpcomponents</groupId>
+	  <artifactId>httpcore</artifactId>
+	  <version>4.4.5</version>
+	</dependency>
+	
+	
+
+	
+	
+	<dependency>
+	  <groupId>org.apache.axis</groupId>
+	  <artifactId>axis</artifactId>
+	  <version>1.0.0</version>
+	</dependency>
+	<dependency>
+	  <groupId>javassist</groupId>
+	  <artifactId>javassist</artifactId>
+	  <version>3.9.0.GA</version>
+	</dependency>
+	<dependency>
+	  <groupId>javax.ws.rs</groupId>
+	  <artifactId>javax.ws.rs</artifactId>
+	  <version>1.0</version>
+	</dependency>
+	<dependency>
+	  <groupId>javax.wsdl_1.6.2.v201012040545</groupId>
+	  <artifactId>javax.wsdl_1.6.2.v201012040545</artifactId>
+	  <version>0.1</version>
+	</dependency>
+	<dependency>
+	  <groupId>jaxrpc</groupId>
+	  <artifactId>jaxrpc</artifactId>
+	  <version>0.1</version>
+	</dependency>
+	<dependency>
+	  <groupId>commons-discovery-0.2</groupId>
+	  <artifactId>commons-discovery-0.2</artifactId>
+	  <version>0.1</version>
+	</dependency>
+	<!-- 为ImportResource功能添加的jar包。 start-->
+	<!-- 解析2007版excel -->
+	<dependency>
+	  <groupId>org.apache.poi</groupId>
+	  <artifactId>poi-ooxml</artifactId>
+	  <version>3.8</version>
+	</dependency>
+	<dependency>
+	  <groupId>org.apache.httpcomponents</groupId>
+	  <artifactId>httpmime</artifactId>
+	</dependency>
+	<dependency>
+	  <groupId>org.apache.poi</groupId>
+	  <artifactId>poi-ooxml-schemas</artifactId>
+	  <version>3.8</version>
+	</dependency>
+	
+	<dependency>
+	  <groupId>jdom</groupId>
+	  <artifactId>jdom</artifactId>
+	  <version>1.0</version>
+	</dependency>
+	<dependency>
+	  <groupId>org.apache.poi</groupId>
+	  <artifactId>poi</artifactId>
+	  <version>3.8</version>
+	</dependency>
+	<!-- 为ImportResource功能添加的jar包。 end-->
+  </dependencies>
+</project>

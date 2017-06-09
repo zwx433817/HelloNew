@@ -1,0 +1,2 @@
+ Failed to read HTTP message: org.springframework.http.converter.HttpMessageNotReadableException: Could not read document: Can not deserialize instance of java.util.Date out of START_OBJECT token
+ at [Source: java.io.PushbackInputStream@153265be; line: 15, column: 17] (through reference chain: com.huawei.cida3.bulletin.model.BulletinManage["createTime"]); nested exception is com.fasterxml.jackson.databind.JsonMappingException: Can not deserialize instance of java.util.Date out of START_OBJECT token

@@ -1,0 +1,195 @@
+一、问题引入
+在用Spring MVC做Web端、APP端的接口时，经常要对接口参数做有效性检查。
+@RequestMapping({ "/getVerifyCode" })
+@ResponseBody
+public Map<String, Object> getVerifyCode(String mobile){
+  try{
+     //参数检查
+     if(StringUtils.isBlank(mobile) && !MobileUtils.isMobileNumber(mobile)){
+       throw new IllegalArgumentException("参数错误");
+     }
+    //此处调用业务代码
+     ... ...
+  }
+  catch(Exception e){
+  }
+}
+
+上面的参数检查代码在每个接口都是必须要的，但是如果在每个接口都写一遍确实很烦人。
+在Spring MVC中有Validator解决方案:
+@RequestMapping(value="/add")
+@ResponseBody
+public AjaxJson add(@Valid InpuInfo inputInfo, Errors errors){
+    try {
+	if(errors.hasErrors()){
+		StringBuilder errorMsg = new StringBuilder();
+		List<FieldError> errorsList = errors.getFieldErrors();
+		for(FieldError fieldError: errorsList){
+			errorMsg.append(fieldError.getDefaultMessage()).append(";");
+		}
+		logger.error("参数错误:{}", errorMsg.toString());
+                throw new IllegalArgumentException("参数错误");
+
+	}
+	//调用业务代码
+	... ...
+
+    }
+    catch(Exception e){
+    }
+}
+
+其中InpuInfo 的校验如下：
+@SuppressWarnings("serial")
+public class InputPo implements Serializable {
+
+   @Pattern(regexp="[0-2]$", message="性别参数不正确")
+   private String gender = "2";
+   @Size(max=200, min=3, message="用户名不能少于3大于200个字符")
+   private String userName;
+   @Pattern(regexp="^((13[0-9])|(145,147)|(15[0-9])|(18[0-9]))\\d{8}$", message="{mobile_isinvalid}")
+   private String mobile;
+   @Size(max=20, min=6, message="密码不能少于6大于20个字符")
+   private String password;
+   @Min(value=1)
+   private Integer orgId;
+   //后面的省略
+}
+
+这样是可以实现自动的参数检查，但是有时候我的接口中仅一个参数，如果用Spring的Validator框架，仍然需要写一个业务bean来封装这个参数，显得太麻烦了。
+如果能够在参数上也能支持自动注解就好了。比如之前的getVerifyCode接口直接在mobile参数前添加注解。如下：
+@RequestMapping(value = "/getVerifyCode")
+@ResponseBody
+@ParameterCheck
+public Map<String, String> getVerifyCode(
+	<span style="color:#ff6666;">@Pattern(regexp="^((13[0-9])|(145,147)|(15[0-9])|(18[0-9]))\\d{8}$", message="手机号码不正确") </span>String mobile ,
+	Errors error){
+	if(errors != null){
+	   throw new IllegalArgumentException("参数错误");
+	}
+        
+	//调用业务代码
+  
+  
+  如果能够实现上面的代码，getVerifyCode接口将变得更简洁。下面我来分析下如何实现此功能：
+1 注解
+      为了实现实现对接口的参数自动检测，必须先引入一个方法级的注解，Spring AOP将对引用此注解的方法进行特殊处理，代码如下
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Mapping
+public @interface ParameterCheck {
+}
+
+
+2 AOP拦截器设计
+@Component
+@Aspect
+public class ParameterCheckAopHandler {
+        //对有ParameterCheck注解的方法进行拦截
+	@Around("@annotation(com.test.ParameterCheck)")  
+	public Object parameterCheck(ProceedingJoinPoint joinPoint) throws Throwable{ 
+		Object target = joinPoint.getTarget();
+		Class<?> clazz = target.getClass();
+		//拦截的方法名
+                String methodName = joinPoint.getSignature().getName();
+		Object[] args = joinPoint.getArgs();
+		//通过反射获取对象注解的方法
+		Method method = ReflectUtils.getMethod(target.getClass(), methodName);
+                //获取该方法在参数上的注解，每个参数可以有多个注解，得到的是一个二维数组
+		Annotation[][] parameterAnnotaions = method.getParameterAnnotations();
+		
+		Errors errors = new Errors();
+		for(int i = 0; i < parameterAnnotaions.length; i++){
+			Annotation[] oneParameterAnnotaions = parameterAnnotaions[i];
+			
+			for(int j = 0; j < oneParameterAnnotaions.length; j++){
+                                //获取到基于正则表达式上的注解，在实际应用中可能需要根据业务对其他注解也进行相关的校验
+				if(oneParameterAnnotaions[j].annotationType() == Pattern.class){
+					Pattern pattern = (Pattern)oneParameterAnnotaions[j];
+                                        boolean isValid = false;
+					if(args[i] != null){
+						String regexp = pattern.regexp();
+						
+						java.util.regex.Pattern patt = java.util.regex.Pattern.compile(regexp);
+						
+						boolean matched = patt.matcher(args[i].toString()).matches();
+						
+						if(matched){
+						   isValid = true;
+						}
+					}
+                                        //记录字段错误
+					if(!isVaild){
+					   FieldError objectError = new FieldError("", pattern.message());
+					   errors.getErrors().add(objectError);
+					}
+				}
+			}
+		}
+		//把字段校验错误传个接口的参数
+		args[args.length-1] = errors;
+		return joinPoint.proceed(args);
+	}
+}
+
+
+其中
+FieldError定义如下：
+public class FieldError {
+	private String filed;
+	private String errorMsg;
+	
+	public FieldError(){
+	}
+	public FieldError(String filed, String errorMsg){
+		this.filed = filed;
+		this.errorMsg = errorMsg;
+	}
+	public String getField() {
+		return filed;
+	}
+	public void setFielde(String filed) {
+		this.filed = filed;
+	}
+	public String getErrorMsg() {
+		return errorMsg;
+	}
+	public void setErrorMsg(String errorMsg) {
+		this.errorMsg = errorMsg;
+	}
+}
+Erros 定义如下：
+public class Errors {
+	
+	public List<FieldError> errors = new ArrayList<FieldError>();
+
+	public List<FieldError> getErrors() {
+		return errors;
+	}
+
+	public void setErrors(List<FieldError> errors) {
+		this.errors = errors;
+	}
+}
+
+
+3 接口参数校验
+@RequestMapping(value = "/getVerifyCode")
+@ResponseBody
+//此处定义AOP拦截注解
+@ParameterCheck
+public Map<String, String> getVerifyCode(
+        //此处直接在参数上利用validation-api中注解，用正则表达式对电话号码进行校验。读者也可以定义自己的注解</span>
+        @Pattern(regexp="^((13[0-9])|(145,147)|(15[0-9])|(18[0-9]))\\d{8}$", message="手机号码不正确") String mobile ,
+	Errors errors){
+    try{
+	if(errors != null){
+	   throw new IllegalArgumentException("参数错误");
+	}
+	//调用业务代码
+        ... ...
+    }
+    catch(Exception e){
+    }
+}

@@ -1,0 +1,498 @@
+今天继续实现AOP，到这里我个人认为是最灵活，可扩展的方式了，就拿日志管理来说，用Spring AOP 自定义注解形式实现日志管理。废话不多说，直接开始！！！
+
+关于配置我还是的再说一遍。
+
+ 
+
+在applicationContext-mvc.xml中要添加的
+
+     <mvc:annotation-driven />
+     <!-- 激活组件扫描功能,在包com.gcx及其子包下面自动扫描通过注解配置的组件 -->
+     <context:component-scan base-package="com.gcx" />
+
+  
+
+     <!-- 启动对@AspectJ注解的支持 --> 
+     <!-- proxy-target-class等于true是强制使用cglib代理，proxy-target-class默认是false，如果你的类实现了接口 就走JDK代理，如果没有，走cglib代理  -->
+     <!-- 注：对于单利模式建议使用cglib代理，虽然JDK动态代理比cglib代理速度快，但性能不如cglib -->
+
+     <!--如果不写proxy-target-class="true"这句话也没问题-->
+     <aop:aspectj-autoproxy proxy-target-class="true"/>
+
+     <!--切面-->
+     <bean id="systemLogAspect" class="com.gcx.annotation.SystemLogAspect"></bean>
+
+接下来开始编写代码。
+
+     创建日志类实体
+      public class SystemLog {
+  2     private String id;
+  3 
+  4     private String description;
+  5 
+  6     private String method;
+  7 
+  8     private Long logType;
+  9 
+ 10     private String requestIp;
+ 11 
+ 12     private String exceptioncode;
+ 13 
+ 14     private String exceptionDetail;
+ 15 
+ 16     private String params;
+ 17 
+ 18     private String createBy;
+ 19 
+ 20     private Date createDate;
+ 21 
+ 22     public String getId() {
+ 23         return id;
+ 24     }
+ 25 
+ 26     public void setId(String id) {
+ 27         this.id = id == null ? null : id.trim();
+ 28     }
+ 29 
+ 30     public String getDescription() {
+ 31         return description;
+ 32     }
+ 33 
+ 34     public void setDescription(String description) {
+ 35         this.description = description == null ? null : description.trim();
+ 36     }
+ 37 
+ 38     public String getMethod() {
+ 39         return method;
+ 40     }
+ 41 
+ 42     public void setMethod(String method) {
+ 43         this.method = method == null ? null : method.trim();
+ 44     }
+ 45 
+ 46     public Long getLogType() {
+ 47         return logType;
+ 48     }
+ 49 
+ 50     public void setLogType(Long logType) {
+ 51         this.logType = logType;
+ 52     }
+ 53 
+ 54     public String getRequestIp() {
+ 55         return requestIp;
+ 56     }
+ 57 
+ 58     public void setRequestIp(String requestIp) {
+ 59         this.requestIp = requestIp == null ? null : requestIp.trim();
+ 60     }
+ 61 
+ 62     public String getExceptioncode() {
+ 63         return exceptioncode;
+ 64     }
+ 65 
+ 66     public void setExceptioncode(String exceptioncode) {
+ 67         this.exceptioncode = exceptioncode == null ? null : exceptioncode.trim();
+ 68     }
+ 69 
+ 70     public String getExceptionDetail() {
+ 71         return exceptionDetail;
+ 72     }
+ 73 
+ 74     public void setExceptionDetail(String exceptionDetail) {
+ 75         this.exceptionDetail = exceptionDetail == null ? null : exceptionDetail.trim();
+ 76     }
+ 77 
+ 78     public String getParams() {
+ 79         return params;
+ 80     }
+ 81 
+ 82     public void setParams(String params) {
+ 83         this.params = params == null ? null : params.trim();
+ 84     }
+ 85 
+ 86     public String getCreateBy() {
+ 87         return createBy;
+ 88     }
+ 89 
+ 90     public void setCreateBy(String createBy) {
+ 91         this.createBy = createBy == null ? null : createBy.trim();
+ 92     }
+ 93 
+ 94     public Date getCreateDate() {
+ 95         return createDate;
+ 96     }
+ 97 
+ 98     public void setCreateDate(Date createDate) {
+ 99         this.createDate = createDate;
+100     }
+101 }
+
+编写service层
+
+package com.gcx.service;
+ 2 
+ 3 import com.gcx.entity.SystemLog;
+ 4 
+ 5 public interface SystemLogService {
+ 6 
+ 7     int deleteSystemLog(String id);
+ 8 
+ 9     int insert(SystemLog record);
+10     
+11     int insertTest(SystemLog record);
+12 
+13     SystemLog selectSystemLog(String id);
+14     
+15     int updateSystemLog(SystemLog record);
+16 }
+
+  编写service实现类serviceImpl
+  
+  package com.gcx.service.impl;
+ 2 
+ 3 import javax.annotation.Resource;
+ 4 
+ 5 import org.springframework.stereotype.Service;
+ 6 
+ 7 import com.gcx.annotation.Log;
+ 8 import com.gcx.dao.SystemLogMapper;
+ 9 import com.gcx.entity.SystemLog;
+10 import com.gcx.service.SystemLogService;
+11 
+12 @Service("systemLogService")
+13 public class SystemLogServiceImpl implements SystemLogService {
+14 
+15     @Resource
+16     private SystemLogMapper systemLogMapper;
+17     
+18     @Override
+19     public int deleteSystemLog(String id) {
+20         
+21         return systemLogMapper.deleteByPrimaryKey(id);
+22     }
+23 
+24     @Override
+25     
+26     public int insert(SystemLog record) {
+27         
+28         return systemLogMapper.insertSelective(record);
+29     }
+30 
+31     @Override
+32     public SystemLog selectSystemLog(String id) {
+33         
+34         return systemLogMapper.selectByPrimaryKey(id);
+35     }
+36 
+37     @Override
+38     public int updateSystemLog(SystemLog record) {
+39         
+40         return systemLogMapper.updateByPrimaryKeySelective(record);
+41     }
+42 
+43     @Override
+44     public int insertTest(SystemLog record) {
+45         
+46         return systemLogMapper.insert(record);
+47     }
+48 
+49 }
+
+到这里基本程序编写完毕
+
+下面开始自定义注解
+package com.gcx.annotation;
+ 2 
+ 3 import java.lang.annotation.*;
+ 4 
+ 5 @Target({ElementType.PARAMETER, ElementType.METHOD})  
+ 6 @Retention(RetentionPolicy.RUNTIME)  
+ 7 @Documented  
+ 8 public @interface Log {
+ 9 
+10     /** 要执行的操作类型比如：add操作 **/  
+11     public String operationType() default "";  
+12      
+13     /** 要执行的具体操作比如：添加用户 **/  
+14     public String operationName() default "";
+15 }
+
+ package com.gcx.annotation;
+  2 
+  3 import java.lang.reflect.Method;
+  4 import java.util.Date;
+  5 import java.util.UUID;
+  6 
+  7 import javax.annotation.Resource;
+  8 import javax.servlet.http.HttpServletRequest;
+  9 import javax.servlet.http.HttpSession;
+ 10 
+ 11 import org.aspectj.lang.JoinPoint;
+ 12 import org.aspectj.lang.ProceedingJoinPoint;
+ 13 import org.aspectj.lang.annotation.After;
+ 14 import org.aspectj.lang.annotation.AfterReturning;
+ 15 import org.aspectj.lang.annotation.AfterThrowing;
+ 16 import org.aspectj.lang.annotation.Around;
+ 17 import org.aspectj.lang.annotation.Aspect;
+ 18 import org.aspectj.lang.annotation.Before;
+ 19 import org.aspectj.lang.annotation.Pointcut;
+ 20 import org.slf4j.Logger;
+ 21 import org.slf4j.LoggerFactory;
+ 22 import org.springframework.stereotype.Component;
+ 23 
+ 24 import com.gcx.entity.SystemLog;
+ 25 import com.gcx.entity.User;
+ 26 import com.gcx.service.SystemLogService;
+ 27 import com.gcx.util.JsonUtil;
+ 28 
+ 29 /**
+ 30  * @author 杨建 
+ 31  * @E-mail: email
+ 32  * @version 创建时间：2015-10-19 下午4:29:05
+ 33  * @desc 切点类 
+ 34  */
+ 35 
+ 36 @Aspect
+ 37 @Component
+ 38 public class SystemLogAspect {
+ 39 
+ 40     //注入Service用于把日志保存数据库  
+ 41     @Resource  //这里我用resource注解，一般用的是@Autowired，他们的区别如有时间我会在后面的博客中来写
+ 42     private SystemLogService systemLogService;  
+ 43     
+ 44     private  static  final Logger logger = LoggerFactory.getLogger(SystemLogAspect. class);  
+ 45     
+ 46     //Controller层切点  
+ 47     @Pointcut("execution (* com.gcx.controller..*.*(..))")  
+ 48     public  void controllerAspect() {  
+ 49     }  
+ 50     
+ 51     /** 
+ 52      * 前置通知 用于拦截Controller层记录用户的操作 
+ 53      * 
+ 54      * @param joinPoint 切点 
+ 55      */ 
+ 56     @Before("controllerAspect()")
+ 57     public void doBefore(JoinPoint joinPoint) {
+ 58         System.out.println("==========执行controller前置通知===============");
+ 59         if(logger.isInfoEnabled()){
+ 60             logger.info("before " + joinPoint);
+ 61         }
+ 62     }    
+ 63     
+ 64     //配置controller环绕通知,使用在方法aspect()上注册的切入点
+ 65       @Around("controllerAspect()")
+ 66       public void around(JoinPoint joinPoint){
+ 67           System.out.println("==========开始执行controller环绕通知===============");
+ 68           long start = System.currentTimeMillis();
+ 69           try {
+ 70               ((ProceedingJoinPoint) joinPoint).proceed();
+ 71               long end = System.currentTimeMillis();
+ 72               if(logger.isInfoEnabled()){
+ 73                   logger.info("around " + joinPoint + "\tUse time : " + (end - start) + " ms!");
+ 74               }
+ 75               System.out.println("==========结束执行controller环绕通知===============");
+ 76           } catch (Throwable e) {
+ 77               long end = System.currentTimeMillis();
+ 78               if(logger.isInfoEnabled()){
+ 79                   logger.info("around " + joinPoint + "\tUse time : " + (end - start) + " ms with exception : " + e.getMessage());
+ 80               }
+ 81           }
+ 82       }
+ 83     
+ 84     /** 
+ 85      * 后置通知 用于拦截Controller层记录用户的操作 
+ 86      * 
+ 87      * @param joinPoint 切点 
+ 88      */  
+ 89     @After("controllerAspect()")  
+ 90     public  void after(JoinPoint joinPoint) {  
+ 91   
+ 92        /* HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();  
+ 93         HttpSession session = request.getSession();  */
+ 94         //读取session中的用户  
+ 95        // User user = (User) session.getAttribute("user");  
+ 96         //请求的IP  
+ 97         //String ip = request.getRemoteAddr();
+ 98         User user = new User();
+ 99         user.setId(1);
+100         user.setName("张三");
+101         String ip = "127.0.0.1";
+102          try {  
+103             
+104             String targetName = joinPoint.getTarget().getClass().getName();  
+105             String methodName = joinPoint.getSignature().getName();  
+106             Object[] arguments = joinPoint.getArgs();  
+107             Class targetClass = Class.forName(targetName);  
+108             Method[] methods = targetClass.getMethods();
+109             String operationType = "";
+110             String operationName = "";
+111              for (Method method : methods) {  
+112                  if (method.getName().equals(methodName)) {  
+113                     Class[] clazzs = method.getParameterTypes();  
+114                      if (clazzs.length == arguments.length) {  
+115                          operationType = method.getAnnotation(Log.class).operationType();
+116                          operationName = method.getAnnotation(Log.class).operationName();
+117                          break;  
+118                     }  
+119                 }  
+120             }
+121             //*========控制台输出=========*//  
+122             System.out.println("=====controller后置通知开始=====");  
+123             System.out.println("请求方法:" + (joinPoint.getTarget().getClass().getName() + "." + joinPoint.getSignature().getName() + "()")+"."+operationType);  
+124             System.out.println("方法描述:" + operationName);  
+125             System.out.println("请求人:" + user.getName());  
+126             System.out.println("请求IP:" + ip);  
+127             //*========数据库日志=========*//  
+128             SystemLog log = new SystemLog();  
+129             log.setId(UUID.randomUUID().toString());
+130             log.setDescription(operationName);  
+131             log.setMethod((joinPoint.getTarget().getClass().getName() + "." + joinPoint.getSignature().getName() + "()")+"."+operationType);  
+132             log.setLogType((long)0);  
+133             log.setRequestIp(ip);  
+134             log.setExceptioncode( null);  
+135             log.setExceptionDetail( null);  
+136             log.setParams( null);  
+137             log.setCreateBy(user.getName());  
+138             log.setCreateDate(new Date());  
+139             //保存数据库  
+140             systemLogService.insert(log);  
+141             System.out.println("=====controller后置通知结束=====");  
+142         }  catch (Exception e) {  
+143             //记录本地异常日志  
+144             logger.error("==后置通知异常==");  
+145             logger.error("异常信息:{}", e.getMessage());  
+146         }  
+147     } 
+148     
+149     //配置后置返回通知,使用在方法aspect()上注册的切入点
+150       @AfterReturning("controllerAspect()")
+151       public void afterReturn(JoinPoint joinPoint){
+152           System.out.println("=====执行controller后置返回通知=====");  
+153               if(logger.isInfoEnabled()){
+154                   logger.info("afterReturn " + joinPoint);
+155               }
+156       }
+157     
+158     /** 
+159      * 异常通知 用于拦截记录异常日志 
+160      * 
+161      * @param joinPoint 
+162      * @param e 
+163      */  
+164      @AfterThrowing(pointcut = "controllerAspect()", throwing="e")  
+165      public  void doAfterThrowing(JoinPoint joinPoint, Throwable e) {  
+166         /*HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();  
+167         HttpSession session = request.getSession();  
+168         //读取session中的用户  
+169         User user = (User) session.getAttribute(WebConstants.CURRENT_USER);  
+170         //获取请求ip  
+171         String ip = request.getRemoteAddr(); */ 
+172         //获取用户请求方法的参数并序列化为JSON格式字符串  
+173         
+174         User user = new User();
+175         user.setId(1);
+176         user.setName("张三");
+177         String ip = "127.0.0.1";
+178         
+179         String params = "";  
+180          if (joinPoint.getArgs() !=  null && joinPoint.getArgs().length > 0) {  
+181              for ( int i = 0; i < joinPoint.getArgs().length; i++) {  
+182                 params += JsonUtil.getJsonStr(joinPoint.getArgs()[i]) + ";";  
+183             }  
+184         }  
+185          try {  
+186              
+187              String targetName = joinPoint.getTarget().getClass().getName();  
+188              String methodName = joinPoint.getSignature().getName();  
+189              Object[] arguments = joinPoint.getArgs();  
+190              Class targetClass = Class.forName(targetName);  
+191              Method[] methods = targetClass.getMethods();
+192              String operationType = "";
+193              String operationName = "";
+194               for (Method method : methods) {  
+195                   if (method.getName().equals(methodName)) {  
+196                      Class[] clazzs = method.getParameterTypes();  
+197                       if (clazzs.length == arguments.length) {  
+198                           operationType = method.getAnnotation(Log.class).operationType();
+199                           operationName = method.getAnnotation(Log.class).operationName();
+200                           break;  
+201                      }  
+202                  }  
+203              }
+204              /*========控制台输出=========*/  
+205             System.out.println("=====异常通知开始=====");  
+206             System.out.println("异常代码:" + e.getClass().getName());  
+207             System.out.println("异常信息:" + e.getMessage());  
+208             System.out.println("异常方法:" + (joinPoint.getTarget().getClass().getName() + "." + joinPoint.getSignature().getName() + "()")+"."+operationType);  
+209             System.out.println("方法描述:" + operationName);  
+210             System.out.println("请求人:" + user.getName());  
+211             System.out.println("请求IP:" + ip);  
+212             System.out.println("请求参数:" + params);  
+213                /*==========数据库日志=========*/  
+214             SystemLog log = new SystemLog();
+215             log.setId(UUID.randomUUID().toString());
+216             log.setDescription(operationName);  
+217             log.setExceptioncode(e.getClass().getName());  
+218             log.setLogType((long)1);  
+219             log.setExceptionDetail(e.getMessage());  
+220             log.setMethod((joinPoint.getTarget().getClass().getName() + "." + joinPoint.getSignature().getName() + "()"));  
+221             log.setParams(params);  
+222             log.setCreateBy(user.getName());  
+223             log.setCreateDate(new Date());  
+224             log.setRequestIp(ip);  
+225             //保存数据库  
+226             systemLogService.insert(log);  
+227             System.out.println("=====异常通知结束=====");  
+228         }  catch (Exception ex) {  
+229             //记录本地异常日志  
+230             logger.error("==异常通知异常==");  
+231             logger.error("异常信息:{}", ex.getMessage());  
+232         }  
+233          /*==========记录本地异常日志==========*/  
+234         logger.error("异常方法:{}异常代码:{}异常信息:{}参数:{}", joinPoint.getTarget().getClass().getName() + joinPoint.getSignature().getName(), e.getClass().getName(), e.getMessage(), params);  
+235   
+236     }  
+237     
+238 }
+
+我这里写的比较全，前置通知，环绕通知，后置通知，异常通知，后置饭后通知，都写上了，在我们实际编写中不写全也没事，我习惯上把记录日志的逻辑写在后置通知里面，我看网上也有些在前置通知里面的，但我感觉写在后置通知里比较好。
+
+下面开始在controller中加入自定义的注解！！
+
+package com.gcx.controller;
+ 2 
+ 3 import org.springframework.beans.factory.annotation.Autowired;
+ 4 import org.springframework.stereotype.Controller;
+ 5 import org.springframework.web.bind.annotation.RequestMapping;
+ 6 
+ 7 import com.gcx.annotation.Log;
+ 8 import com.gcx.service.UserService;
+ 9 
+10 @Controller
+11 @RequestMapping("userController")
+12 public class UserController {
+13 
+14     @Autowired
+15     private UserService userService;
+16     
+17     @RequestMapping("testAOP")
+18     @Log(operationType="add操作:",operationName="添加用户")  
+19     public void testAOP(String userName,String password){        
+20         userService.addUser(userName, password);
+21     }
+22 }
+
+
+下面编写测试类
+
+ @Test
+2     public void testAOP1(){
+3         //启动Spring容器        
+4         ApplicationContext ctx = new ClassPathXmlApplicationContext(new String[]{"classpath:applicationContext-mvc.xml","classpath:applicationContext-dataSource.xml"});
+5         //获取service或controller组件
+6         UserController userController = (UserController) ctx.getBean("userController");
+7         userController.testAOP("zhangsan", "123456");
+8     }
+
+  

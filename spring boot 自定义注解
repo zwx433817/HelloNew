@@ -1,0 +1,80 @@
+spring boot 自定义注解
+ 收藏
+姚情侣
+\\
+
+
+在使用spring boot中使用spring-boot-starter-aop对自定义注解的支持，本质上是spring aop对自定义注解的支持。
+
+spring-boot-starter-aop自定义注解步骤如下:
+
+1、编写自定义注解类
+
+@Documented
+@Target({ElementType.PARAMETER, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ULog {
+}
+
+
+2、编写注解类切面
+
+@Aspect
+@Component
+public class  HLogAspect {
+    @Pointcut("@annotation(com.yql.service.ULog)")
+    public  void annotationPointCut() {
+    }
+
+    @Before("annotationPointCut()")
+    public void before(JoinPoint joinPoint){
+       MethodSignature sign =  (MethodSignature)joinPoint.getSignature();
+       Method method = sign.getMethod();
+       System.out.print("接受方法："+method.getName()+" 前置日志");
+    }
+}
+
+3、在spring boot的Application启动类中使用@EnableAspectJAutoProxy注解，添加对Aspectj支持
+
+@SpringBootApplication
+//开启spring对Aspectj的支持
+@EnableAspectJAutoProxy
+public class AopApplication {
+
+   public static void main(String[] args) {
+      SpringApplication.run(AopApplication.class, args);
+   }
+
+}
+
+4、调用自定义注解
+
+@RestController
+public class TestController {
+
+    @RequestMapping(value="/")
+    @ULog
+    public String test(){
+        return "hello world";
+    }
+}
+
+
+注：pom文件需要添加一下依赖
+
+<dependencies>
+   <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+   </dependency>
+   <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+   </dependency>
+   <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-aop</artifactId>
+   </dependency>
+
+</dependencies>
